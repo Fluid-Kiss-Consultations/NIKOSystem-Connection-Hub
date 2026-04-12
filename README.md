@@ -1,6 +1,6 @@
 # NIKOSystem Connection Hub
 
-> **Nascent Integration of Kernelized Optimization -- Unified Product v1**
+> **Nascent Integration of Kernelized Optimization — Unified Product v1**
 
 [![Contracts CI](https://github.com/Fluid-Kiss-Consultations/NIKOSystem-Diamond-v1/actions/workflows/contracts-ci.yml/badge.svg)](https://github.com/Fluid-Kiss-Consultations/NIKOSystem-Diamond-v1/actions/workflows/contracts-ci.yml)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity)](https://soliditylang.org/)
@@ -9,31 +9,47 @@
 [![Tests](https://img.shields.io/badge/tests-422%20passing-brightgreen)](#test-status)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](#license)
 
-(c) 2025 John A. Welch (Founder/Systems Oracle), Fluid Kiss Consultations. All rights reserved.
+© 2025 John A. Welch (Founder/Systems Oracle), Fluid Kiss Consultations. All rights reserved.
 
 ---
 
 ## Overview
 
-NIKOSystem Diamond is a Turborepo monorepo unifying four components into a blockchain SaaS platform built on the Diamond Standard (EIP-2535), targeting Optimism L2.
+NIKOSystem Diamond is a modular blockchain SaaS platform built on the Diamond Standard (EIP-2535), targeting Optimism L2. It provides upgradeable on-chain logic, a strategic microkernel backend, and a framework-agnostic agent integration surface — designed so any reasoning model can connect to any agent through typed, composable stubs.
+
+The system supports client-specific contract forks from a single diamond deployment, proven in production through the Nifty Mints implementation.
+
+---
 
 ## Architecture
 
 ```text
-NIKOSystem-Diamond/
+NIKOSystem-Diamond-v1/
 ├── packages/
-│   ├── contracts/    @niko/contracts — EIP-2535 facets, libraries, Foundry tests
-│   ├── backend/      @niko/backend  — NestJS microkernel, PostgreSQL, Redis, APIs
-│   ├── brandi/       @niko/brandi   — agent framework, workflow engine
-│   └── frontend/     React 19 + Vite — admin dashboard
-├── .github/workflows/  CI/CD pipelines
-├── docker-compose.yml  Local dev (postgres + redis + backend)
-├── Dockerfile          Multi-stage production build
-├── turbo.json          Turborepo build pipeline
-└── package.json        Workspace root (pnpm)
+│   ├── contracts/    @niko/contracts  — EIP-2535 facets, libraries, Foundry tests
+│   ├── backend/      @niko/backend   — Strategic microkernel, event bus, APIs
+│   ├── brandi/       @niko/brandi    — Agent framework (separate product, licensed use)
+│   └── frontend/     React 19 + Vite — Admin dashboard (in development)
+├── .github/workflows/   CI/CD pipelines
+├── turbo.json           Turborepo build pipeline
+└── package.json         Workspace root (pnpm)
 ```
 
+### Build Dependencies
+
+```text
+@niko/contracts (forge build)
+    ↓ ABI artifacts
+@niko/backend (nest build) ← depends on contracts
+    ↓ API types + event bus
+@niko/brandi (tsc -b) ← depends on contracts + backend
+```
+
+---
+
 ## Diamond Facets
+
+Ten facets compose the on-chain logic layer. Each facet owns its storage namespace via the Diamond Storage pattern, preventing collision across upgrades.
 
 | Facet | Purpose | Library |
 |-------|---------|---------|
@@ -48,48 +64,64 @@ NIKOSystem-Diamond/
 | Treasury | Deposits, revenue splits, distribution | LibTreasury |
 | Oracle | Dual-chain aggregation, consensus verification | LibOracle |
 
-## Backend Architecture
+All access control is function-scoped through `LibSecurity` — roles bind to operations, not entities.
 
-The backend is a **NestJS application hosting a legacy microkernel pattern** — not a standard NestJS app. `KernelService` owns an RxJS `BehaviorSubject<KernelState>` with Immer-based immutable mutations and a `Subject<KernelEvent>` event bus. All inter-module communication routes through the event bus (HC-1).
+---
+
+## Strategic Microkernel
+
+The backend is not a standard NestJS application. It hosts a **strategic microkernel** where `KernelService` owns the system's reactive state through an RxJS `BehaviorSubject<KernelState>` with Immer-based immutable mutations, and a `Subject<KernelEvent>` event bus. All inter-module communication routes exclusively through the event bus.
 
 ### Business Modules
 
-All extend `NikoModule` (abstract base class enforcing `shouldHandle`/`handleEvent`):
+Every module extends `NikoModule`, an abstract base class enforcing `shouldHandle` and `handleEvent` — guaranteeing that modules cannot bypass the kernel or call each other directly.
 
 | Module | Responsibility |
 |--------|---------------|
-| Client | Registration, lifecycle, config |
+| Client | Registration, lifecycle, configuration |
 | Oracle | Dual-chain aggregation, consensus verification |
 | Chain | Per-client fork chains + shared main chain |
 | Agent | Template-based deployment, execution tracking |
 | Session | API key auth, token management, rate limiting |
 | Treasury | Revenue recording, per-client accounting |
-| Metrics | Prometheus registry (imperative, not event-driven) |
+| Metrics | Prometheus registry, system observability |
 
-### Infrastructure Layer
+---
 
-| Service | Role |
-|---------|------|
-| DatabaseService | PostgreSQL pool, migrations, graceful degradation |
-| CacheService | Redis (main + pub/sub), rate limiting, distributed locks |
-| AuditService | Passive eventBus$ subscriber, persists all events |
-| SnapshotService | Periodic BehaviorSubject→JSONB snapshots (D3) |
+## Agent Integration
 
-### Diamond Bridges
+NIKOSystem is offered as a solution for linking your agent to your reasoning model — framework-agnostic by design.
 
-8 bridges (Orchestrator, Oracle, Consensus, Monitoring, Treasury, Security, Kernel, Governance) connect to on-chain Diamond facets via ethers.js. All use `@Optional()` injection — the system runs fully functional without a Diamond connection (HC-2).
+The agent integration surface exposes typed stubs that define the boundary between NIKOSystem's orchestration layer and any external agent or reasoning framework. These stubs are composable: an agent connects through event contracts and bridge mappings without coupling to NIKOSystem internals.
 
-## Build Dependencies
+This means:
+- **BRANDI** connects as a first-party agent through these stubs while retaining full separate-product status
+- **Any third-party agent framework** can implement the same typed interface to participate in NIKOSystem orchestration
+- **Any reasoning model** (local, hosted, hybrid) can be routed through the agent layer without architectural lock-in
 
-```text
-@niko/contracts (forge build)
-    ↓ ABI artifacts
-@niko/backend (nest build) ← depends on contracts
-    ↓ API types + event bus
-@niko/brandi (tsc -b) ← depends on contracts + backend
-```
+The coupling is deliberate and minimal — enough structure to guarantee event-level validation, loose enough that the agent owns its own reasoning.
 
-## Quick Start
+---
+
+## Technology Stack
+
+| Layer | Built With |
+|-------|-----------|
+| Smart Contracts | Solidity 0.8.24, Foundry |
+| Contract Standard | EIP-2535 Diamond Standard |
+| Target Chain | Optimism L2 |
+| Backend Framework | NestJS, RxJS |
+| Reactive State | Immer (immutable mutations) |
+| Database | PostgreSQL |
+| Cache | Redis |
+| Frontend | React 19, Vite |
+| Monorepo | Turborepo, pnpm workspaces |
+| CI/CD | GitHub Actions |
+| Agent Framework | BRANDI (licensed, separate product) |
+
+---
+
+## Build & Test
 
 ```bash
 # Install dependencies
@@ -101,98 +133,67 @@ turbo run build
 # Run contract tests
 cd packages/contracts && forge test -vvv
 
+# Gas report
+forge test --gas-report
+
 # Run backend tests
 cd packages/backend && pnpm test
 ```
 
-### Docker (Local Development)
+### Test Status
 
-```bash
-# Copy environment template
-cp .env.example .env
+**422 tests total**, all passing.
 
-# Start postgres, redis, and backend
-docker compose up --build
+**Contracts — 130 tests across 10 suites:**
 
-# Verify
-curl http://localhost:3000/health
-curl http://localhost:3000/health/detailed
-```
+| Suite | Tests | Coverage |
+|-------|------:|----------|
+| Phase 0 — Security/Monitoring | 25 | RBAC, pause, blacklist, events, health |
+| Phase 1 — Orchestrator | 16 | Agent lifecycle, actions, metrics |
+| Phase 2 — Kernel | 13 | Cache CRUD, TTL, batch, optimization |
+| Phase 3 — Consensus | 16 | Block proposal, validation, finalization, FSM |
+| Phase 4 — Governance | 12 | Proposals, voting, execution, pause |
+| Phase 5 — Treasury | 12 | Deposits, splits, distribution, emergency |
+| Phase 6 — Oracle | 12 | Chain registration, aggregation, consensus, commit |
+| Diamond | 10 | Deployment, introspection, cuts, fallback |
+| Gas Efficiency | 13 | Regression guards at 1.25× measured baseline |
 
-Services: `postgres:14-alpine` (port 5432), `redis:7-alpine` (port 6379), backend (port 3000).
+**Backend — 292 tests** covering microkernel state management, event bus routing, module isolation, and bridge connectivity.
 
-## Test Status
+---
 
-422 tests total (130 contracts + 292 backend), all passing.
+## Related Projects
 
-### Contracts (Foundry) — 130 tests, 10 suites
+### BRANDI
 
-| Suite | Tests | Status |
-|-------|------:|--------|
-| Phase0 — Security/Monitoring | 25 | Pass |
-| Phase1 — Orchestrator | 16 | Pass |
-| Phase2 — Kernel | 13 | Pass |
-| Phase3 — Consensus | 16 | Pass |
-| Phase4 — Governance | 12 | Pass |
-| Phase5 — Treasury | 12 | Pass |
-| Phase6 — Oracle | 12 | Pass |
-| Diamond (core) | 10 | Pass |
-| GasEfficiency | 13 | Pass |
-| TestFacet (helper) | 1 | Pass |
+**Branching Recursive Asynchronous Nodal Decentralized Intelligence**
 
-### Backend (Jest) — 292 tests, 28 suites
+BRANDI is an agentic component within NIKOSystem Diamond (`packages/brandi`) while retaining separate product status — licensed for use by NIKOSystem, not owned by it. BRANDI maintains its own identity, release cycle, and licensing.
 
-| Category | Suites | Tests |
-|----------|-------:|------:|
-| Kernel (service, events, state, contracts, modules) | 5 | 48 |
-| Business modules (client, agent, chain, oracle, session, treasury) | 6 | 87 |
-| Cascade integration (phase3, phase4, client-chain) | 3 | 28 |
-| API controllers + gateway | 6 | 58 |
-| Diamond (client, bridges) | 2 | 24 |
-| Infrastructure (database, cache, config, snapshot) | 4 | 35 |
-| Metrics | 1 | 8 |
-| BRANDI stubs | 1 | 4 |
+© 2026 John A. Welch, Fluid Kiss Consultations. All rights reserved.
 
-## CI Pipeline
+→ [github.com/Fluid-Kiss-Consultations/BRANDI](https://github.com/Fluid-Kiss-Consultations/BRANDI)
 
-Every push and PR touching `packages/contracts/` triggers:
+### Blinded Eye Foundation
 
-- **Build** -- `forge build --sizes` (contract compilation + size check)
-- **Test** -- `forge test -vvv` (full suite, verbose)
-- **Gas Report** -- posted as PR comment on pull requests
-- **Security** -- secret scanning, storage namespace collision detection
-- **Formatting** -- `forge fmt --check`
+NIKOSystem Diamond is licensed to the Blinded Eye Foundation for the SHANNON use case under alignment research.
 
-## Environment Configuration
+The Foundation operates on a transparency principle: **high visibility signals alignment is true; low visibility signals extractive corporate interest.** If you can see the work, the work is honest.
 
-Copy `.env.example` to `.env`. Key variable groups:
+→ [github.com/Fluid-Kiss-Consultations/Blinded-Eye-Foundation](https://github.com/Fluid-Kiss-Consultations/Blinded-Eye-Foundation)
 
-| Group | Variables | Defaults |
-|-------|-----------|----------|
-| Server | `PORT`, `CORS_ORIGIN` | 3000, `*` |
-| PostgreSQL | `DATABASE_URL`, `DATABASE_MAX_POOL` | localhost:5432/blockchain_saas, 20 |
-| Redis | `REDIS_URL`, `REDIS_MAX_RETRIES` | localhost:6379, 3 |
-| Security | `JWT_SECRET`, `SESSION_TIMEOUT`, `RATE_LIMIT_*` | dev defaults |
-| Snapshots | `SNAPSHOT_DEBOUNCE_MS`, `SNAPSHOT_RETENTION` | 5000ms, 5 |
-| Diamond | `OPTIMISM_RPC_URL`, `DIAMOND_ADDRESS`, `PRIVATE_KEY` | empty (offline mode) |
+### Nifty Mints
 
-See [`.env.example`](.env.example) for the full list.
+Client fork proof-of-concept — an audio-centric NFT marketplace demonstrating NIKOSystem's fork-and-customize deployment model. Each client instance receives an autonomous contract fork with customizable facets while inheriting the core Diamond Standard infrastructure.
 
-## Stack
+→ [github.com/Fluid-Kiss-Consultations/nifty-mints-v3](https://github.com/Fluid-Kiss-Consultations/nifty-mints-v3)
 
-- **Contracts:** Solidity 0.8.24, Foundry, Diamond Standard (EIP-2535)
-- **Backend:** NestJS, RxJS, PostgreSQL, Redis, GraphQL, WebSocket
-- **Agents:** TypeScript, AGPL-3.0
-- **Infrastructure:** Docker, n8n, Nginx, Ionos
-- **Chain:** Optimism Layer 2
-
-## Reference Repos
-
-| Repo | Role |
-|------|------|
-| Surety-Diamond | Compliance facet upstream source |
-| Blinded-Eye-Foundation | Alignment constraints, constitutional field |
+---
 
 ## License
 
-Proprietary. (c) 2025 John A. Welch (Founder/CEO), Fluid Solutions (an FKC Company). All rights reserved.
+**Proprietary.** © 2025 John A. Welch, Systems Oracle, Fluid Kiss Consultations. All rights reserved.
+
+This software and associated documentation are the exclusive property of the copyright holder. No part of this repository may be reproduced, distributed, or transmitted in any form without prior written permission.
+
+For licensing inquiries, contact Fluid Kiss Consultations.
