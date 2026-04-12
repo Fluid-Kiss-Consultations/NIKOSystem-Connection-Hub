@@ -186,8 +186,6 @@ The Foundation operates on a transparency principle: **high visibility signals a
 
 Client fork proof-of-concept — an audio-centric NFT marketplace demonstrating NIKOSystem's fork-and-customize deployment model. Each client instance receives an autonomous contract fork with customizable facets while inheriting the core Diamond Standard infrastructure.
 
-→ [github.com/Fluid-Kiss-Consultations/nifty-mints-v3](https://github.com/Fluid-Kiss-Consultations/nifty-mints-v3)
-
 ---
 
 ## License
