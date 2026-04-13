@@ -52,7 +52,7 @@ NIKOSystem-Diamond-v1/
 Ten facets compose the on-chain logic layer. Each facet owns its storage namespace via the Diamond Storage pattern, preventing collision across upgrades.
 
 | Facet | Purpose | Library |
-|-------|---------|---------|
+| ------- | --------- | --------- |
 | DiamondCut | Upgrade mechanism (add/replace/remove) | LibDiamond |
 | DiamondLoupe | Introspection (ERC-165) | LibDiamond |
 | Security | RBAC, pause, blacklist | LibSecurity |
@@ -77,7 +77,7 @@ The backend is not a standard NestJS application. It hosts a **strategic microke
 Every module extends `NikoModule`, an abstract base class enforcing `shouldHandle` and `handleEvent` — guaranteeing that modules cannot bypass the kernel or call each other directly.
 
 | Module | Responsibility |
-|--------|---------------|
+| -------- | --------------- |
 | Client | Registration, lifecycle, configuration |
 | Oracle | Dual-chain aggregation, consensus verification |
 | Chain | Per-client fork chains + shared main chain |
@@ -95,6 +95,7 @@ NIKOSystem is offered as a solution for linking your agent to your reasoning mod
 The agent integration surface exposes typed stubs that define the boundary between NIKOSystem's orchestration layer and any external agent or reasoning framework. These stubs are composable: an agent connects through event contracts and bridge mappings without coupling to NIKOSystem internals.
 
 This means:
+
 - **BRANDI** connects as a first-party agent through these stubs while retaining full separate-product status
 - **Any third-party agent framework** can implement the same typed interface to participate in NIKOSystem orchestration
 - **Any reasoning model** (local, hosted, hybrid) can be routed through the agent layer without architectural lock-in
@@ -106,7 +107,7 @@ The coupling is deliberate and minimal — enough structure to guarantee event-l
 ## Technology Stack
 
 | Layer | Built With |
-|-------|-----------|
+| ------- | ----------- |
 | Smart Contracts | Solidity 0.8.24, Foundry |
 | Contract Standard | EIP-2535 Diamond Standard |
 | Target Chain | Optimism L2 |
@@ -147,7 +148,7 @@ cd packages/backend && pnpm test
 **Contracts — 130 tests across 10 suites:**
 
 | Suite | Tests | Coverage |
-|-------|------:|----------|
+| ------- | ------- | ---------- |
 | Phase 0 — Security/Monitoring | 25 | RBAC, pause, blacklist, events, health |
 | Phase 1 — Orchestrator | 16 | Agent lifecycle, actions, metrics |
 | Phase 2 — Kernel | 13 | Cache CRUD, TTL, batch, optimization |
@@ -160,13 +161,24 @@ cd packages/backend && pnpm test
 
 **Backend — 292 tests** covering microkernel state management, event bus routing, module isolation, and bridge connectivity.
 
+| Category | Suites | Tests |
+| ---------- | -------- | ------- |
+| Kernel (service, events, state, contracts, modules) | 5 | 48 |
+| Business modules (client, agent, chain, oracle, session, treasury) | 6 | 87 |
+| Cascade integration (phase3, phase4, client-chain) | 3 | 28 |
+| API controllers + gateway | 6 | 58 |
+| Diamond (client, bridges) | 2 | 24 |
+| Infrastructure (database, cache, config, snapshot) | 4 | 35 |
+| Metrics | 1 | 8 |
+| BRANDI stubs | 1 | 4 |
+
 ---
 
 ## Related Projects
 
 ### BRANDI
 
-**Branching Recursive Asynchronous Nodal Decentralized Intelligence**
+>**Branching Recursive Asynchronous Nodal Decentralized Intelligence**
 
 BRANDI is an agentic component within NIKOSystem Diamond (`packages/brandi`) while retaining separate product status — licensed for use by NIKOSystem, not owned by it. BRANDI maintains its own identity, release cycle, and licensing.
 
