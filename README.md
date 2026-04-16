@@ -6,7 +6,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?logo=solidity)](https://soliditylang.org/)
 [![EIP-2535](https://img.shields.io/badge/EIP--2535-Diamond%20Standard-blue)](https://eips.ethereum.org/EIPS/eip-2535)
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-FFDB1C?logo=ethereum)](https://getfoundry.sh/)
-[![Tests](https://img.shields.io/badge/tests-422%20passing-brightgreen)](#test-status)
+[![Tests](https://img.shields.io/badge/tests-521%20passing-brightgreen)](#test-status)
 [![License](https://img.shields.io/badge/license-Proprietary-red)](#license)
 
 © 2025 John A. Welch (Founder/Systems Oracle), Fluid Kiss Consultations. All rights reserved.
@@ -143,7 +143,7 @@ cd packages/backend && pnpm test
 
 ### Test Status
 
-**422 tests total**, all passing.
+**521 tests total**, all passing: 130 contracts + 304 backend + 87 frontend.
 
 **Contracts — 130 tests across 10 suites:**
 
@@ -159,18 +159,28 @@ cd packages/backend && pnpm test
 | Diamond | 10 | Deployment, introspection, cuts, fallback |
 | Gas Efficiency | 13 | Regression guards at 1.25× measured baseline |
 
-**Backend — 292 tests** covering microkernel state management, event bus routing, module isolation, and bridge connectivity.
+**Backend — 304 tests** covering microkernel state management, event bus routing, module isolation, PG write-through, and bridge connectivity.
 
 | Category | Suites | Tests |
 | ---------- | -------- | ------- |
-| Kernel (service, events, state, contracts, modules) | 5 | 48 |
-| Business modules (client, agent, chain, oracle, session, treasury) | 6 | 87 |
-| Cascade integration (phase3, phase4, client-chain) | 3 | 28 |
-| API controllers + gateway | 6 | 58 |
-| Diamond (client, bridges) | 2 | 24 |
-| Infrastructure (database, cache, config, snapshot) | 4 | 35 |
-| Metrics | 1 | 8 |
-| BRANDI stubs | 1 | 4 |
+| Kernel (service, events, state, contracts, modules) | 5 | 43 |
+| Business modules (client, agent, chain, oracle, session, treasury) | 6 | 101 |
+| Cascade integration (phase3, phase4, client-chain) | 3 | 24 |
+| API controllers + gateway | 6 | 29 |
+| Diamond (client, bridges) | 2 | 27 |
+| Infrastructure (database, cache, config, snapshot) | 4 | 54 |
+| Metrics | 1 | 11 |
+| BRANDI stubs | 1 | 15 |
+
+**Frontend — 87 tests** covering API client, hooks, components, and all 11 admin dashboard pages.
+
+| Category | Suites | Tests |
+| ---------- | -------- | ------- |
+| API client | 1 | 6 |
+| Hooks (useAuth, useDiamond) | 2 | 14 |
+| Components (StatCard, Layout) | 2 | 7 |
+| Pages (11 admin pages) | 12 | 55 |
+| App root | 1 | 5 |
 
 ---
 
